@@ -16,6 +16,7 @@ use crate::execute::Mode;
 use crate::clock_settings::{handle_clock_set, parse_clock_set_input, handle_show_clock, handle_show_uptime};
 use crate::network_config::{calculate_broadcast, STATUS_MAP, IFCONFIG_STATE, IP_ADDRESS_STATE, ROUTE_TABLE, OSPF_CONFIG, ACL_STORE, encrypt_password, PASSWORD_STORAGE, set_enable_password, set_enable_secret};
 use crate::network_config::{InterfaceConfig, OSPFConfig, AclEntry, AccessControlList, NtpAssociation};
+use crate::dynamic_registry::{get_registered_commands, convert_to_command};
 
 
 /// Builds and returns a `HashMap` of available commands, each represented by a `Command` structure.
@@ -104,6 +105,8 @@ use crate::network_config::{InterfaceConfig, OSPFConfig, AclEntry, AccessControl
 /// Each `Command` struct contains the `name`, `description`, `suggestions`, and an `execute` function.
 pub fn build_command_registry() -> HashMap<&'static str, Command> {
     let mut commands = HashMap::new();
+
+    // Mode Transition 
 
     commands.insert("enable", Command {
         name: "enable",
@@ -356,6 +359,9 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
         },
     });
     
+
+    // General Commands
+
     commands.insert("reload", Command {
         name: "reload",
         description: "Reload the system",
@@ -1652,6 +1658,15 @@ Two styles of help are provided:
     );
 
 
+    //FRR Commands
+
+
+
+
+
+
+
+    
     //VLAN Commands 
 
     commands.insert("vlan", Command {
@@ -2777,7 +2792,11 @@ Two styles of help are provided:
     });
 
     
-    
+    if let Ok(dynamic_commands) = get_registered_commands() {
+        for (name, dy_command) in dynamic_commands {
+            commands.insert(name, convert_to_command(dy_command));
+        }
+    }
 
 
     commands

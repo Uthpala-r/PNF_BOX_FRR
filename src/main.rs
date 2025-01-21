@@ -3,6 +3,7 @@
 //! This file serves as the main module that initializes and links all other sub-modules.
 //! The CLI provides a hierarchical command structure similar to Cisco's networking devices.
 
+//main.rs
 
 /// Modules included in the CLI application
 mod cliconfig;
@@ -12,6 +13,8 @@ mod clock_settings;
 mod run_config;
 mod execute;
 mod network_config;
+mod dynamic_registry;
+mod new_commands;
 
 
 /// Internal imports from the application's modules
@@ -22,6 +25,8 @@ use clicommands::build_command_registry;
 use execute::execute_command;
 use clock_settings::Clock;
 use crate::execute::Mode;
+use crate::dynamic_registry::register_command;
+use crate::new_commands::register_custom_commands;
 
 
 /// External crates for the CLI application
@@ -30,7 +35,6 @@ use rustyline::Editor;
 use rustyline::history::DefaultHistory;
 use std::collections::{HashSet, HashMap};
 use ctrlc;
-
 
 /// Main function of the CLI application.
 ///
@@ -76,7 +80,7 @@ fn main() {
     // Build the registry of commands and retrieve their names
     let commands = build_command_registry();
     let command_names: Vec<String> = commands.keys().cloned().map(String::from).collect();
-    
+
     // Define the initial hostname as "Router"
     let initial_hostname = "Router".to_string();
     
@@ -120,6 +124,10 @@ fn main() {
     rl.set_helper(Some(completer));
     rl.load_history("history.txt").ok();
 
+    if let Err(e) = register_custom_commands() {
+        eprintln!("Failed to register commands: {}", e);
+    }
+
     // Set up the initial clock settings
     let mut clock = Some(Clock::new());
     
@@ -152,6 +160,7 @@ fn main() {
                 if let Some(helper) = rl.helper_mut() {
                     execute_command(input, &commands, &mut context, &mut clock, helper);
                     helper.current_mode = context.current_mode.clone();
+                    helper.refresh_completions().ok();
                 }
                       
             }

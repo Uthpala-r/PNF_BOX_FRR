@@ -217,7 +217,7 @@ end
 /// ```
 pub fn default_startup_config(_context: &mut CliContext) -> String {
     
-    let startup_config = (
+    let startup_config = 
         
         r#"
 Building configuration...
@@ -240,8 +240,8 @@ shutdown
 !
 end
 "#
-        .to_string()
+        .to_string();
     
-);
+
     startup_config
 }

@@ -1,7 +1,7 @@
 //execute.rs
 
 /// External crates for the CLI application
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use crate::Clock;
 use crate::CliContext;
 use crate::commandcompleter::{CommandCompleter};
@@ -29,6 +29,7 @@ use crate::commandcompleter::{CommandCompleter};
 ///     - `&mut CliContext`: The current CLI context, including mode, configuration, and state.
 ///     - `&mut Option<Clock>`: An optional mutable reference to the clock, allowing the command to manipulate system time settings if needed.  
 ///   Returns a `Result<(), String>`, where `Ok(())` indicates success and `Err(String)` contains an error message if execution fails.
+#[derive(Clone)]
 pub struct Command {
     pub name: &'static str,
     pub description: &'static str,

@@ -260,10 +260,25 @@
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a></pre></div><pre class="rust"><code><span class="doccomment">/// External crates for the CLI application
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a></pre></div><pre class="rust"><code><span class="doccomment">/// External crates for the CLI application
 </span><span class="kw">use </span><span class="kw">crate</span>::build_command_registry;
 <span class="kw">use </span><span class="kw">crate</span>::execute::Mode;
 <span class="kw">use </span><span class="kw">crate</span>::execute::Command;
+<span class="kw">use </span><span class="kw">crate</span>::dynamic_registry::get_registered_commands;
 
 <span class="kw">use </span>rustyline::hint::Hinter;
 <span class="kw">use </span>rustyline::Helper;
@@ -320,6 +335,15 @@
             commands,
             current_mode,
         }
+    }
+
+    <span class="kw">pub fn </span>refresh_completions(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+        <span class="kw">if let </span><span class="prelude-val">Ok</span>(commands) = get_registered_commands() {
+            <span class="kw">for </span>command <span class="kw">in </span>commands.keys() {
+                <span class="self">self</span>.commands.insert(command.to_string(), <span class="macro">vec!</span>[command.to_string()]);
+            }
+        }
+        <span class="prelude-val">Ok</span>(())
     }
 
 }
@@ -441,7 +465,7 @@
 /// - **ConfigMode**: Configuration commands like `hostname`, `interface`, `ip`, and more.
 /// - **InterfaceMode**: Interface-specific commands like `shutdown`, `switchport`, `ip`, etc.
 /// - **VlanMode**: VLAN-specific commands like `name`, `state`, and `vlan`.
-/// - **RouterConfigMode**: Router configuration commands like `network`, `neighbor`, and `area`.
+/// - **RouterOSPFMode**: Router configuration commands like `network`, `neighbor`, and `area`.
 /// - **ConfigStdNaclMode**: Standard ACL commands like `deny`, `permit`, and `ip`.
 /// - **ConfigExtNaclMode**: Extended ACL commands like `deny`, `permit`, and `ip`.
 ///
@@ -471,7 +495,11 @@
         Mode::ConfigMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"hostname" </span>| <span class="string">"reload" </span>| <span class="string">"interface" </span>| <span class="string">"ip" </span>| <span class="string">"no" </span>| <span class="string">"exit" </span>| <span class="string">"clear" </span>| <span class="string">"tunnel" </span>| <span class="string">"virtual-template" </span>| <span class="string">"help" </span>| <span class="string">"write" </span>| <span class="string">"ping" </span>| <span class="string">"vlan" </span>| <span class="string">"access-list" </span>| <span class="string">"router" </span>| <span class="string">"enable" </span>| <span class="string">"service" </span>| <span class="string">"set" </span>| <span class="string">"ifconfig" </span>| <span class="string">"ntp" </span>| <span class="string">"crypto"</span>),
         Mode::InterfaceMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"exit" </span>| <span class="string">"reload" </span>| <span class="string">"shutdown" </span>| <span class="string">"no" </span>| <span class="string">"switchport" </span>| <span class="string">"clear" </span>| <span class="string">"help" </span>| <span class="string">"write" </span>| <span class="string">"interface" </span>| <span class="string">"ip"</span>), 
         Mode::VlanMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"name" </span>| <span class="string">"exit" </span>| <span class="string">"reload" </span>| <span class="string">"clear" </span>| <span class="string">"help" </span>| <span class="string">"state" </span>| <span class="string">"vlan"</span>),
-        Mode::RouterConfigMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"network" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"clear" </span>| <span class="string">"help" </span>| <span class="string">"neighbor" </span>| <span class="string">"area" </span>| <span class="string">"passive-interface" </span>| <span class="string">"distance" </span>| <span class="string">"default-information" </span>| <span class="string">"router-id"</span>),
+        Mode::RouterOSPFMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"network" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"no" </span>| <span class="string">"clear" </span>| <span class="string">"help" </span>| <span class="string">"neighbor" </span>| <span class="string">"area" </span>| <span class="string">"passive-interface" </span>| <span class="string">"distance" </span>| <span class="string">"default-information" </span>| <span class="string">"router-id"</span>),
+        Mode::RouterRIPMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"network" </span>| <span class="string">"passive-interface" </span>| <span class="string">"auto-summary" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"no" </span>| <span class="string">"clear" </span>| <span class="string">"help"</span>),
+        Mode::RouterISISMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"network" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"no" </span>| <span class="string">"clear" </span>| <span class="string">"help"</span>),
+        Mode::RouterEIGRPMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"router-id" </span>| <span class="string">"network" </span>| <span class="string">"passive-interface" </span>| <span class="string">"auto-summary" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"no" </span>| <span class="string">"clear" </span>| <span class="string">"help"</span>),
+        Mode::RouterBGPMode =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"router-id" </span>| <span class="string">"distance" </span>| <span class="string">"network" </span>| <span class="string">"reload" </span>| <span class="string">"exit" </span>| <span class="string">"no" </span>| <span class="string">"clear" </span>| <span class="string">"help"</span>),
         Mode::ConfigStdNaclMode(<span class="kw">_</span>) =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"deny" </span>| <span class="string">"permit" </span>| <span class="string">"reload" </span>| <span class="string">"help" </span>| <span class="string">"exit" </span>| <span class="string">"clear" </span>| <span class="string">"ip"</span>),
         Mode::ConfigExtNaclMode(<span class="kw">_</span>) =&gt; <span class="macro">matches!</span>(command.as_str(), <span class="string">"deny" </span>| <span class="string">"permit" </span>| <span class="string">"reload" </span>| <span class="string">"help" </span>| <span class="string">"exit" </span>| <span class="string">"clear" </span>| <span class="string">"ip"</span>),
         

@@ -419,11 +419,87 @@
 <a href="#418" id="418">418</a>
 <a href="#419" id="419">419</a>
 <a href="#420" id="420">420</a>
-<a href="#421" id="421">421</a></pre></div><pre class="rust"><code><span class="doccomment">/// External crates for the CLI application
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a></pre></div><pre class="rust"><code><span class="doccomment">/// External crates for the CLI application
 </span><span class="kw">use </span>std::str::FromStr;
 <span class="kw">use </span>std::net::Ipv4Addr;
 <span class="kw">use </span>std::sync::{Mutex, Arc};
-<span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::collections::{HashMap, HashSet};
 <span class="kw">use </span>sha2::{Sha256, Digest};
 
 
@@ -437,6 +513,53 @@
     <span class="kw">pub </span>is_up: bool,  
 }
 
+<span class="doccomment">/// Configuration for RIP (Routing Information Protocol).
+///
+/// RIP is a distance-vector routing protocol used in local and wide area networks.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">pub struct </span>RIPConfig {
+    <span class="kw">pub </span>networks: HashSet&lt;Ipv4Addr&gt;,      
+    <span class="kw">pub </span>interfaces: HashSet&lt;String&gt;,  
+    <span class="kw">pub </span>auto_summary: bool,  
+    <span class="kw">pub </span>distance: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+}
+
+
+<span class="doccomment">/// Configuration for EIGRP (Enhanced Interior Gateway Routing Protocol).
+///
+/// EIGRP is an advanced distance-vector routing protocol that includes features like 
+/// rapid convergence, unequal-cost load balancing, and reduced network resource usage.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">pub struct </span>EIGRPConfig {
+    <span class="kw">pub </span>process_id: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    <span class="kw">pub </span>auto_summary: bool,
+    <span class="kw">pub </span>networks: HashMap&lt;String, u32&gt;,
+    <span class="kw">pub </span>router_id: <span class="prelude-ty">Option</span>&lt;Ipv4Addr&gt;,
+}
+
+
+
+<span class="doccomment">/// Configuration for IS-IS (Intermediate System to Intermediate System).
+///
+/// IS-IS is a link-state routing protocol used for intra-domain routing.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">pub struct </span>ISISConfig {
+    <span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+}
+
+
+
+<span class="doccomment">/// Configuration for BGP (Border Gateway Protocol).
+///
+/// BGP is a standardized exterior gateway protocol designed to exchange routing 
+/// and reachability information between autonomous systems on the internet.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">pub struct </span>BGPConfig {
+    <span class="kw">pub </span>ans: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    <span class="kw">pub </span>router_id: <span class="prelude-ty">Option</span>&lt;Ipv4Addr&gt;,
+    <span class="kw">pub </span>distance: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    <span class="kw">pub </span>networks: HashMap&lt;String, u32&gt;,
+}
 
 <span class="macro">lazy_static::lazy_static!</span> {
 
@@ -558,6 +681,35 @@
     /// store.add_password("user1", "password123");
     /// ```
     </span><span class="kw">pub static </span><span class="kw-2">ref </span>PASSWORD_STORAGE: Mutex&lt;PasswordStore&gt; = Mutex::new(PasswordStore::default());
+
+    
+    <span class="doccomment">/// Global configuration for RIP (Routing Information Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the RIP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    </span><span class="kw">pub static </span><span class="kw-2">ref </span>RIP_CONFIG: Mutex&lt;RIPConfig&gt; = Mutex::new(RIPConfig::default());
+
+
+    <span class="doccomment">/// Global configuration for EIGRP (Enhanced Interior Gateway Routing Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the EIGRP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    </span><span class="kw">pub static </span><span class="kw-2">ref </span>EIGRP_CONFIG: Mutex&lt;EIGRPConfig&gt; = Mutex::new(EIGRPConfig::default());
+
+
+    <span class="doccomment">/// Global configuration for IS-IS (Intermediate System to Intermediate System).
+    ///
+    /// This is a thread-safe, mutable reference to the IS-IS configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    </span><span class="kw">pub static </span><span class="kw-2">ref </span>ISIS_CONFIG: Mutex&lt;ISISConfig&gt; = Mutex::new(ISISConfig::default());
+
+
+    <span class="doccomment">/// Global configuration for BGP (Border Gateway Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the BGP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    </span><span class="kw">pub static </span><span class="kw-2">ref </span>BGP_CONFIG: Mutex&lt;BGPConfig&gt; = Mutex::new(BGPConfig::default());
+
 
 }
 

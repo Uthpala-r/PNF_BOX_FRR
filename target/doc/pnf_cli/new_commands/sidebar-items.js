@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["hello_command","register_custom_commands"]};

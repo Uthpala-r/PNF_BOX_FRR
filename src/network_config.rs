@@ -2,7 +2,7 @@
 use std::str::FromStr;
 use std::net::Ipv4Addr;
 use std::sync::{Mutex, Arc};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use sha2::{Sha256, Digest};
 
 
@@ -16,6 +16,53 @@ pub struct InterfaceConfig {
     pub is_up: bool,  
 }
 
+/// Configuration for RIP (Routing Information Protocol).
+///
+/// RIP is a distance-vector routing protocol used in local and wide area networks.
+#[derive(Debug, Default)]
+pub struct RIPConfig {
+    pub networks: HashSet<Ipv4Addr>,      
+    pub interfaces: HashSet<String>,  
+    pub auto_summary: bool,  
+    pub distance: Option<u32>,
+}
+
+
+/// Configuration for EIGRP (Enhanced Interior Gateway Routing Protocol).
+///
+/// EIGRP is an advanced distance-vector routing protocol that includes features like 
+/// rapid convergence, unequal-cost load balancing, and reduced network resource usage.
+#[derive(Debug, Default)]
+pub struct EIGRPConfig {
+    pub process_id: Option<u32>,
+    pub auto_summary: bool,
+    pub networks: HashMap<String, u32>,
+    pub router_id: Option<Ipv4Addr>,
+}
+
+
+
+/// Configuration for IS-IS (Intermediate System to Intermediate System).
+///
+/// IS-IS is a link-state routing protocol used for intra-domain routing.
+#[derive(Debug, Default)]
+pub struct ISISConfig {
+    pub name: Option<String>,
+}
+
+
+
+/// Configuration for BGP (Border Gateway Protocol).
+///
+/// BGP is a standardized exterior gateway protocol designed to exchange routing 
+/// and reachability information between autonomous systems on the internet.
+#[derive(Debug, Default)]
+pub struct BGPConfig {
+    pub ans: Option<u32>,
+    pub router_id: Option<Ipv4Addr>,
+    pub distance: Option<u32>,
+    pub networks: HashMap<String, u32>,
+}
 
 lazy_static::lazy_static! {
 
@@ -137,6 +184,35 @@ lazy_static::lazy_static! {
     /// store.add_password("user1", "password123");
     /// ```
     pub static ref PASSWORD_STORAGE: Mutex<PasswordStore> = Mutex::new(PasswordStore::default());
+
+    
+    /// Global configuration for RIP (Routing Information Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the RIP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    pub static ref RIP_CONFIG: Mutex<RIPConfig> = Mutex::new(RIPConfig::default());
+
+
+    /// Global configuration for EIGRP (Enhanced Interior Gateway Routing Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the EIGRP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    pub static ref EIGRP_CONFIG: Mutex<EIGRPConfig> = Mutex::new(EIGRPConfig::default());
+
+
+    /// Global configuration for IS-IS (Intermediate System to Intermediate System).
+    ///
+    /// This is a thread-safe, mutable reference to the IS-IS configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    pub static ref ISIS_CONFIG: Mutex<ISISConfig> = Mutex::new(ISISConfig::default());
+
+
+    /// Global configuration for BGP (Border Gateway Protocol).
+    ///
+    /// This is a thread-safe, mutable reference to the BGP configuration, 
+    /// protected by a `Mutex` to allow safe concurrent access and updates.
+    pub static ref BGP_CONFIG: Mutex<BGPConfig> = Mutex::new(BGPConfig::default());
+
 
 }
 

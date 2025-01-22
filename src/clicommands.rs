@@ -14,7 +14,7 @@ use crate::run_config::{get_running_config, default_startup_config};
 use crate::execute::Command;
 use crate::execute::Mode;
 use crate::clock_settings::{handle_clock_set, parse_clock_set_input, handle_show_clock, handle_show_uptime};
-use crate::network_config::{calculate_broadcast, STATUS_MAP, IFCONFIG_STATE, IP_ADDRESS_STATE, ROUTE_TABLE, OSPF_CONFIG, ACL_STORE, encrypt_password, PASSWORD_STORAGE, set_enable_password, set_enable_secret};
+use crate::network_config::{calculate_broadcast, STATUS_MAP, IFCONFIG_STATE, IP_ADDRESS_STATE, ROUTE_TABLE, OSPF_CONFIG, RIP_CONFIG, EIGRP_CONFIG, ISIS_CONFIG, BGP_CONFIG, ACL_STORE, encrypt_password, PASSWORD_STORAGE, set_enable_password, set_enable_secret};
 use crate::network_config::{InterfaceConfig, OSPFConfig, AclEntry, AccessControlList, NtpAssociation};
 use crate::dynamic_registry::{get_registered_commands, convert_to_command};
 
@@ -55,6 +55,7 @@ use crate::dynamic_registry::{get_registered_commands, convert_to_command};
 /// - `reload`: Reloads the system
 /// - `debug all`: Debug all the processors
 /// - `undebug all`: Undebug all the processors
+/// - `clear`: Clear the terminal
 /// - `write memory`: Saves the running configuration to the startup configuration.
 /// - `copy running-config`: Copies the running configuration to the startup configuration or to a new file if mentioned.
 /// - `help`: Displays a list of available commands.
@@ -73,7 +74,12 @@ use crate::dynamic_registry::{get_registered_commands, convert_to_command};
 /// - `name`: Define the name of the vlan
 /// - `state: Define the state of the valn
 /// - `switchport`: Defines the switchports
-/// - `router ospf`: Configures and enables an OSPF routing process on the router. Specify the process ID to distinguish between multiple OSPF instances. This will enter the RouterConfig Mode
+/// - `router`: Represents the different routing protocols used to exchange routing information.
+///     - `router ospf`: Open Shortest Path First, a link-state protocol used for intra-domain routing.
+///     - `router rip`: Routing Information Protocol, a simple distance-vector protocol for small networks.
+///     - `router eigrp`: Enhanced Interior Gateway Routing Protocol, an advanced distance-vector protocol.
+///     - `router isis`: Intermediate System to Intermediate System, a scalable link-state protocol.
+///     - `router bgp`: Border Gateway Protocol, the protocol used to exchange routing information between autonomous systems on the internet.
 /// - `network`: Associates a network or subnet with a specific OSPF area.
 /// - `neighbor`: Manually specifies a neighboring router for OSPF adjacency, usually in cases of non-broadcast networks.
 /// - `area`: Defines OSPF area-specific configurations, such as authentication, stub area settings, or default-cost for stub areas.
@@ -82,6 +88,7 @@ use crate::dynamic_registry::{get_registered_commands, convert_to_command};
 /// - `default-information`: Configures OSPF to advertise a default route (0.0.0.0/0) to other routers in the network.
 /// - `router-id`: Manually sets a unique identifier for the OSPF process, typically an IPv4 address, to distinguish the router in the OSPF domain.
 /// - `clear ip ospf process`: Restarts the OSPF process, clearing the OSPF routing table and adjacencies.
+/// - `auto-summary`: To restore automatic summarization
 /// - `access-list`: Defines an ACL by creating or modifying an access control list with a specified number or name. This command is used to specify a set of rules for filtering network traffic.
 /// - `permit`: An ACL action that allows network traffic that matches the rule's conditions (e.g., specific IP address or protocol) to pass through.
 /// - `deny`: An ACL action that blocks network traffic matching the rule's conditions, preventing it from passing through the network.
@@ -318,7 +325,31 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                         println!("Exiting VLAN Mode...");
                         Ok(())
                     }
-                    Mode::RouterConfigMode => {
+                    Mode::RouterOSPFMode => {
+                        context.current_mode = Mode::ConfigMode;
+                        context.prompt = format!("{}(config)#", context.config.hostname);
+                        println!("Exiting Router Configuration Mode Mode...");
+                        Ok(())
+                    }
+                    Mode::RouterRIPMode => {
+                        context.current_mode = Mode::ConfigMode;
+                        context.prompt = format!("{}(config)#", context.config.hostname);
+                        println!("Exiting Router Configuration Mode Mode...");
+                        Ok(())
+                    }
+                    Mode::RouterISISMode => {
+                        context.current_mode = Mode::ConfigMode;
+                        context.prompt = format!("{}(config)#", context.config.hostname);
+                        println!("Exiting Router Configuration Mode Mode...");
+                        Ok(())
+                    }
+                    Mode::RouterEIGRPMode => {
+                        context.current_mode = Mode::ConfigMode;
+                        context.prompt = format!("{}(config)#", context.config.hostname);
+                        println!("Exiting Router Configuration Mode Mode...");
+                        Ok(())
+                    }
+                    Mode::RouterBGPMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
                         println!("Exiting Router Configuration Mode Mode...");
@@ -646,10 +677,39 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                                             println!("Router ID: {:?}", ospf_config.router_id.clone().unwrap_or("Not set".to_string()));
                                             println!("Administrative Distance: {:?}", ospf_config.distance.unwrap_or(110));
                                             println!("Default Information Originate: {}", ospf_config.default_information_originate);
+                                            for (ip_address, cost_value) in &ospf_config.neighbors {
+                                                println!("Neighbor Ip address: {} amd cost value: {:?}", ip_address, cost_value);
+                                            }
+                                            println!("Passive Interfaces: {:?}", ospf_config.passive_interfaces);
+                                            Ok(())
+                                        },
+                                        Some(&"interface") => {
+                                            let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                                            println!("Current OSPF Configuration:");
+                                            println!("Process ID: {:?}", ospf_config.process_id);
+                                            for (key, area_id) in &ospf_config.networks {
+                                                println!("Network: {} in Area: {}", key, area_id);
+                                            }
                                             println!("Passive Interfaces: {:?}", ospf_config.passive_interfaces);
                                             Ok(())
                                         },
                                         _ => Err("Invalid OSPF subcommand. Use 'neighbor'".into())
+                                    }
+                                },
+                                Some(&"eigrp") => {
+                                    match args.get(2) {
+                                        Some(&"interface") => {
+                                            let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                                            let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                                            println!("Current EIGRP Configuration:");
+                                            println!("Process ID: {:?}", eigrp_config.process_id);
+                                            for (key, area_id) in &eigrp_config.networks {
+                                                println!("Network: {} in Area: {}", key, area_id);
+                                            }
+                                            println!("Passive Interfaces: {:?}", ospf_config.passive_interfaces);
+                                            Ok(())
+                                        },
+                                        _ => Err("Invalid EIGRP subcommand. Use 'interface'".into())
                                     }
                                 },
                                 Some(&"route") => {
@@ -702,6 +762,45 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                                     }
                         
                                     Ok(())
+                                },
+                                Some(&"rip") => {
+                                    let rip_config = RIP_CONFIG.lock().unwrap();
+                                    if rip_config.networks.is_empty() && rip_config.interfaces.is_empty() {
+                                        println!("No rip routes configured.");
+                                        Ok(())
+                                    } else {
+                                        let auto_summary = rip_config.auto_summary;
+                                        let distance = rip_config.distance.unwrap_or(120);
+                                        //let default_metric = rip_config.default_metric.unwrap_or(4);
+                                        println!("RIP global parameters");
+                                        println!("  RIP protocol  : enabled");
+                                        println!("  Auto-summary  : {}", if auto_summary { "enabled" } else { "disabled" });
+                                        println!("  Default Metric: 4");
+                                        println!("  Distance      : {}", distance);
+                                        println!("  Route changes : 0");
+                                        println!("  Queries       : 0");
+
+                                        // Display RIP interface information
+                                        println!("\nRIP interface information");
+                                        println!(
+                                            "{:<15} {:<11} {:<18} {:<10} {:<11} {:<5}",
+                                            "IP Address", "Status", "Send mode", "Recv mode", "Metric", "Auth"
+                                        );
+                                        println!("{:-<80}", "");
+
+                                        for ip_network in &rip_config.networks {
+                                            println!(
+                                                "{:<15} {:<11} {:<18} {:<10} {:<11} {:<5}",
+                                                ip_network,
+                                                "enabled",
+                                                "V2-only",
+                                                "V2-only",
+                                                "5", // Default metric
+                                                "none"
+                                            );
+                                        }
+                                        Ok(())
+                                    }
                                 },
                                 Some(&"interface") => {
                                     match args.get(2) {
@@ -1141,7 +1240,7 @@ Two styles of help are provided:
                     println!("clear             - Clear the terminal");
                     println!("help              - Display available commands");
                 }
-                else if matches!(context.current_mode, Mode::RouterConfigMode) {
+                else if matches!(context.current_mode, Mode::RouterOSPFMode) {
                     println!("network           - Configure network");
                     println!("exit              - Exit to config mode");
                     println!("neighbor          - Configure BGP neighbor");
@@ -1149,6 +1248,42 @@ Two styles of help are provided:
                     println!("passive-interface - Configure passive interface");
                     println!("distance          - Configure administrative distance");
                     println!("default-information - Configure default route distribution");
+                    println!("router-id         - Configure router ID");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                } 
+                else if matches!(context.current_mode, Mode::RouterRIPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("passive-interface - Configure passive interface");
+                    println!("distance          - Configure administrative distance");
+                    println!("auto-summary      - To restore automatic summarization");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("passive-interface - Configure passive interface");
+                    println!("distance          - Configure administrative distance");
+                    println!("auto-summary      - To restore automatic summarization");
+                    println!("router-id         - Configure router ID");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterISISMode) {
+                    println!("exit              - Exit to config mode");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterBGPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("distance          - Configure administrative distance");
                     println!("router-id         - Configure router ID");
                     println!("reload            - Reload the system");
                     println!("clear             - Clear the terminal");
@@ -1601,8 +1736,8 @@ Two styles of help are provided:
         Command {
             name: "no shutdown",
             description: "Enable the selected network interface.",
-            suggestions: Some(vec!["shutdown", "ntp"]),
-            suggestions1: Some(vec!["shutdown", "ntp"]),
+            suggestions: Some(vec!["shutdown", "ntp", "network", "neighbor", "auto-summary"]),
+            suggestions1: Some(vec!["shutdown", "ntp", "network", "neighbor", "auto-summary"]),
             options: None,
             execute: |args, context, _| {
                 if args.len() == 1 && args[0] == "shutdown" {
@@ -1649,6 +1784,71 @@ Two styles of help are provided:
                     } else {
                         Err("The 'no ntp server' command is only available in configuration mode.".into())
                     }
+                } else if args.len() == 5 && args[0] == "network" && args[3] == "area" {
+                    if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                        
+                        let ip_address = args[1].clone();
+                        let wildcard_mask = args[2].clone();
+                        let key = format!("{} {}", ip_address, wildcard_mask);
+                            
+                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                        if ospf_config.networks.remove(&key).is_some() {
+                            println!(
+                                "Network {} {} removed from OSPF configuration.",
+                                ip_address, wildcard_mask
+                            );
+                            Ok(())
+                        } else {
+                            Err("Network not found in OSPF configuration.".into())
+                        }
+                        
+                    } else {
+                        Err("The 'no network' command is only available in Router OSPF Configuration mode.".into())
+                    }
+                } else if args.len() == 4 && args[0] == "neighbor" && args[2] == "cost" {
+                    if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                        
+                        let ip_address = match Ipv4Addr::from_str(&args[1]) {
+                            Ok(ip) => ip,
+                            Err(_) => return Err("Invalid IP address format.".into()),
+                        };
+                        let cost = args[3].clone();
+                            
+                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                        if ospf_config.neighbors.contains_key(&ip_address) {
+                            ospf_config.neighbors.remove(&ip_address);
+                            println!(
+                                "Neighbor {} with cost {} removed from OSPF configuration.",
+                                ip_address, cost
+                            );
+                            Ok(())
+                        } else {
+                            Err("Neighbor not found in OSPF configuration.".into())
+                        }
+                        
+                    } else {
+                        Err("The 'no neighbor' command is only available in Router OSPF Configuration mode.".into())
+                    }
+                
+                
+                } else if args.len() == 1 && args[0] == "auto-summary" {
+                    if matches!(context.current_mode, Mode::RouterRIPMode) {
+                        let mut rip_config = RIP_CONFIG.lock().unwrap();
+                        rip_config.auto_summary = false; 
+                        println!("Auto-summary disabled.");
+                        Ok(())
+                        
+                    } else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                        let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                        eigrp_config.auto_summary = false; 
+                        println!("Auto-summary disabled.");
+                        Ok(())
+                        
+                    } 
+                    else {
+                        Err("The 'no auto-summary' command is only available in Router RIP Configuration mode and Router EIGRP Configuration mode.".into())
+                    }
+                
                 } else {
                     Err("Invalid arguments provided to 'no'.".into())
                 }
@@ -1660,11 +1860,506 @@ Two styles of help are provided:
 
     //FRR Commands
 
+    commands.insert("router", Command {
+        name: "router",
+        description: "Enable FRRouting and enter corresponding router configuration modes",
+        suggestions: Some(vec!["ospf", "rip", "eigrp", "isis", "bgp"]),
+        suggestions1: Some(vec!["ospf", "rip", "eigrp", "isis", "bgp"]),
+        options: Some(vec!["<process-id> | <name>      - Enter the routing process-id or name"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::ConfigMode ) {
+                if args.len() == 2 && args[0] == "ospf"  {
+                    let process_id = args[1].parse::<u32>();
+                    match process_id {
+                        Ok(id) if id > 0 => {
+                            let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                            ospf_config.process_id = Some(id);
+                            context.current_mode = Mode::RouterOSPFMode;
+                            context.prompt = format!("{}(config-router-ospf)#", context.config.hostname);
+                            println!("OSPF routing enabled with process ID {}.", id);
+                            Ok(())
+                        }
+                        _ => Err("Invalid process ID provided. It must be a positive integer.".into()),
+                    }
+                } else if args[0] == "ospf" {
+                    Err("The 'router ospf' command requires exactly one argument: the process ID.".into())
+                } else if args.len() == 2 && args[0] == "eigrp"  {
+                    let process_id = args[1].parse::<u32>();
+                    match process_id {
+                        Ok(id) if id > 0 => {
+                            let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                            eigrp_config.process_id = Some(id);
+                            context.current_mode = Mode::RouterEIGRPMode;
+                            context.prompt = format!("{}(config-router-eigrp)#", context.config.hostname);
+                            println!("EIGRP routing enabled with process ID {}.", id);
+                            Ok(())
+                        }
+                        _ => Err("Invalid process ID provided. It must be a positive integer.".into()),
+                    }
+                } else if args[0] == "eigrp" {
+                    Err("The 'router eigrp' command requires exactly one argument: the process ID.".into())
+                }
+                else if args.len() == 2 && args[0] == "isis"  {
+                    let name = args[1].to_string();
+                    let mut isis_config = ISIS_CONFIG.lock().unwrap();
+                    isis_config.name= Some(name.clone());
+                    context.current_mode = Mode::RouterISISMode;
+                    context.prompt = format!("{}(config-router-isis)#", context.config.hostname);
+                    println!("ISIS routing enabled with process name {}.", name);
+                    Ok(())
+                } else if args[0] == "isis" {
+                    Err("The 'router isis' command requires exactly one argument: the process name.".into())
+                }
+                else if args.len() == 2 && args[0] == "bgp"  {
+                    let ans = args[1].parse::<u32>();
+                    match ans {
+                        Ok(id) if id > 0 => {
+                            let mut bgp_config = BGP_CONFIG.lock().unwrap();
+                            bgp_config.ans= Some(id);
+                            context.current_mode = Mode::RouterBGPMode;
+                            context.prompt = format!("{}(config-router-bgp)#", context.config.hostname);
+                            println!("BGP routing enabled with Autonomous System Number {}.", id);
+                            Ok(())
+                        }
+                        _ => Err("Invalid Autonomous System Number provided. It must be a positive integer.".into()),
+                    }
+                } else if args[0] == "bgp" {
+                    Err("The 'router bgp' command requires exactly one argument: the Autonomous System Number.".into())
+                }
+                else if args.len() == 1 && args[0] == "rip" {
+                    context.current_mode = Mode::RouterRIPMode;
+                    context.prompt = format!("{}(config-router-rip)#", context.config.hostname);
+                    println!("RIP routing enabled");
+                    Ok(())
+                } else {
+                    Err("The 'router' command is not correct".into())
+                }
+            } else {
+                Err("The 'router' command is only available in Global Configuration mode and FRR modes.".into())
+            }
+        },
+    });
 
+    commands.insert("network", Command {
+        name: "network",
+        description: "Define an OSPF network and associate it with an area ID",
+        suggestions: None,
+        suggestions1: None,
+        options: Some(vec!["<ip-address>        - Enter the ip-address",
+            "<wildcard-mask>      - Enter the wildcard-mask",
+            "<area-id>          - Enter the area-id"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if args.len() == 4 {
+                    let ip_address = args[0].clone();
+                    let wildcard_mask = args[1].clone();
+                    let area_id = args[3].parse::<u32>();
+    
+                    if area_id.is_err() || ip_address.is_empty() || wildcard_mask.is_empty() {
+                        Err("Invalid arguments provided. Usage: network <ip-address> <wildcard-mask> area <area-id>".into())
+                    } else {
+                        let area_id = area_id.unwrap();
+                        let key = format!("{} {}", ip_address, wildcard_mask);
+                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                        ospf_config.networks.insert(key, area_id);
+                        println!(
+                            "Network {} {} added to OSPF area {}.",
+                            ip_address, wildcard_mask, area_id
+                        );
+                        Ok(())
+                    }
+                } else {
+                    Err("The 'network' command requires three arguments: <ip-address> <wildcard-mask> area <area-id>.".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                if args.len() == 4 {
+                    let ip_address = args[0].clone();
+                    let wildcard_mask = args[1].clone();
+                    let area_id = args[3].parse::<u32>();
+    
+                    if area_id.is_err() || ip_address.is_empty() || wildcard_mask.is_empty() {
+                        Err("Invalid arguments provided. Usage: network <ip-address> <wildcard-mask> area <area-id>".into())
+                    } else {
+                        let area_id = area_id.unwrap();
+                        let key = format!("{} {}", ip_address, wildcard_mask);
+                        let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                        eigrp_config.networks.insert(key, area_id);
+                        println!(
+                            "Network {} {} added to OSPF area {}.",
+                            ip_address, wildcard_mask, area_id
+                        );
+                        Ok(())
+                    }
+                } else {
+                    Err("The 'network' command requires three arguments: <ip-address> <wildcard-mask> area <area-id>.".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterBGPMode) {
+                if args.len() == 4 {
+                    let ip_address = args[0].clone();
+                    let wildcard_mask = args[1].clone();
+                    let area_id = args[3].parse::<u32>();
+    
+                    if area_id.is_err() || ip_address.is_empty() || wildcard_mask.is_empty() {
+                        Err("Invalid arguments provided. Usage: network <ip-address> <wildcard-mask> area <area-id>".into())
+                    } else {
+                        let area_id = area_id.unwrap();
+                        let key = format!("{} {}", ip_address, wildcard_mask);
+                        let mut bgp_config = BGP_CONFIG.lock().unwrap();
+                        bgp_config.networks.insert(key, area_id);
+                        println!(
+                            "Network {} {} added to OSPF area {}.",
+                            ip_address, wildcard_mask, area_id
+                        );
+                        Ok(())
+                    }
+                } else {
+                    Err("The 'network' command requires three arguments: <ip-address> <wildcard-mask> area <area-id>.".into())
+                }
+            }
+            else if matches!(context.current_mode, Mode::RouterRIPMode) {
+                if args.len() == 1 {
+                    let input = args[0].clone();
+                    let mut rip_config = RIP_CONFIG.lock().unwrap();
+                    if let Ok(network) = input.parse::<Ipv4Addr>() {
+                        rip_config.networks.insert(network);
+                        println!("Network {} added to RIP configuration.", network);
+                        Ok(())
+                    } else {
+                        rip_config.interfaces.insert(input.clone().to_string());
+                        println!("Interface {} added to RIP configuration.", input);
+                        Ok(())
+                    }
+                } else {
+                    Err("Invalid arguments provided. Usage: network <network> or network <interface>".into())
+                }
+            
+            } else {
+                Err("The 'network' command is only available in Router Configuration mode.".into())
+            }
+        },
+    });
 
+    commands.insert("neighbor", Command {
+        name: "neighbor",
+        description: "Specify a neighbor and optionally assign a cost.",
+        suggestions: None,
+        suggestions1: None,
+        options: Some(vec!["<ip-address>       - Enter the ip-address",
+            "<cost>       - Enter the cost"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if args.is_empty() {
+                    return Err("Usage: neighbor <ip-address> [cost <number>]".into());
+                }
+    
+                let ip_address = Ipv4Addr::from_str(&args[0]).expect("Invalid IP address format");
+                let mut cost: Option<u32> = None;
+    
+                // Parse optional "cost <number>" arguments
+                if args.len() == 3 && args[1] == "cost" {
+                    match args[2].parse::<u32>() {
+                        Ok(value) => {
+                            cost = Some(value);
+                        }
+                        Err(_) => {
+                            return Err("Invalid cost value. It must be a positive integer.".into());
+                        }
+                    }
+                } else if args.len() != 1 {
+                    return Err("Usage: neighbor <ip-address> [cost <number>]".into());
+                }
 
+                let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                ospf_config.neighbors.insert(ip_address, cost);
+                
+                if let Some(cost_value) = cost {
+                    println!("Neighbor {} configured with cost {}.", ip_address, cost_value);
+                } else {
+                    println!("Neighbor {} configured with default cost.", ip_address);
+                }
+                Ok(())
+                
+            } else {
+                Err("The 'neighbor' command is only available in Router OSPF Configuration mode.".into())
+            }
+        },
+    });
 
+    commands.insert("area", Command {
+        name: "area",
+        description: "Configure OSPF area options.",
+        suggestions: Some(vec!["authentication", "stub", "default-cost"]),
+        suggestions1: None,
+        options: Some(vec!["<area-id>       - Enter the area-id"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if args.is_empty() {
+                    return Err("Usage: area <area-id> <subcommand> [options]".into());
+                }
+    
+                let area_id = args[0].clone();
+                let subcommand = args.get(1).map(|s| &s[..]).unwrap_or_default();
+    
+                match subcommand {
+                    "authentication" => {
+                        if args.len() == 2 {
+                            println!("Authentication enabled for area {}.", area_id);
+                            Ok(())
+                        } else {
+                            Err("Usage: area <area-id> authentication".into())
+                        }
+                    }
+                    "stub" => {
+                        if args.len() == 2 {
+                            println!("Area {} configured as a stub.", area_id);
+                            Ok(())
+                        } else if args.len() == 3 && args[2] == "no-summary" {
+                            println!("Area {} configured as a stub with no-summary.", area_id);
+                            Ok(())
+                        } else {
+                            Err("Usage: area <area-id> stub [no-summary]".into())
+                        }
+                    }
+                    "default-cost" => {
+                        if args.len() == 3 {
+                            match args[2].parse::<u32>() {
+                                Ok(cost) => {
+                                    println!("Default cost for area {} set to {}.", area_id, cost);
+                                    Ok(())
+                                }
+                                Err(_) => Err("Invalid cost value. It must be a positive integer.".into()),
+                            }
+                        } else {
+                            Err("Usage: area <area-id> default-cost <cost>".into())
+                        }
+                    }
+                    _ => Err("Invalid subcommand. Valid subcommands: authentication, stub, default-cost".into()),
+                }
+            } else {
+                Err("The 'area' command is only available in Router Configuration mode.".into())
+            }
+        },
+    });
 
+    commands.insert("passive-interface", Command {
+        name: "passive-interface",
+        description: "Disables sending OSPF Hello packets on an interface",
+        suggestions: None,
+        suggestions1: None,
+        options: Some(vec!["<interface>     - Enter the interface name"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode | Mode::RouterRIPMode | Mode::RouterEIGRPMode) {
+                if let Some(interface) = args.get(0) {
+                    let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                    ospf_config.passive_interfaces.push(interface.to_string());
+                    println!("Passive interface set on: {}", interface);
+                    Ok(())
+                } else {
+                    Err("Usage: passive-interface <interface>".into())
+                }
+            } else {
+                Err("The 'passive-interface' command is only available in Router OSPF mode.".into())
+            }
+        },
+    });
+    
+
+    commands.insert("distance", Command {
+        name: "distance",
+        description: "Set administrative distance for OSPF",
+        suggestions: None,
+        suggestions1: None,
+        options: Some(vec!["<distance>      - Set the distance"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if let Some(distance) = args.get(0) {
+                    if let Ok(dist) = distance.parse::<u32>() {
+                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                        ospf_config.distance = Some(dist);
+                        println!("OSPF administrative distance set to: {}", dist);
+                        Ok(())
+                    } else {
+                        Err("Invalid distance value. Must be a number.".into())
+                    }
+                } else {
+                    Err("Usage: distance <value>".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterRIPMode) {
+                if let Some(distance) = args.get(0) {
+                    if let Ok(dist) = distance.parse::<u32>() {
+                        let mut rip_config = RIP_CONFIG.lock().unwrap();
+                        rip_config.distance = Some(dist);
+                        println!("RIP administrative distance set to: {}", dist);
+                        Ok(())
+                    } else {
+                        Err("Invalid distance value. Must be a number.".into())
+                    }
+                } else {
+                    Err("Usage: distance <value>".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterBGPMode) {
+                if let Some(distance) = args.get(0) {
+                    if let Ok(dist) = distance.parse::<u32>() {
+                        let mut bgp_config = BGP_CONFIG.lock().unwrap();
+                        bgp_config.distance = Some(dist);
+                        println!("RIP administrative distance set to: {}", dist);
+                        Ok(())
+                    } else {
+                        Err("Invalid distance value. Must be a number.".into())
+                    }
+                } else {
+                    Err("Usage: distance <value>".into())
+                }
+            }
+            else {
+                Err("The 'distance' command is only available in Router OSPF mode and Router RIP Mode.".into())
+            }
+        },
+    });
+
+    commands.insert("default-information", Command {
+        name: "default-information",
+        description: "Originate a default route in OSPF",
+        suggestions: Some(vec!["originate"]),
+        suggestions1: Some(vec!["originate"]),
+        options: None,
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if args.get(0).map(|s| &s[..]) == Some("originate") {
+                    println!("Default-information originate command executed.");
+                    Ok(())
+                } else {
+                    Err("Usage: default-information originate".into())
+                }
+            } else {
+                Err("The 'default-information originate' command is only available in Router OSPF mode.".into())
+            }
+        },
+    });
+
+    commands.insert("router-id", Command {
+        name: "router-id",
+        description: "Set the router ID for the OSPF process",
+        suggestions: None,
+        suggestions1: None,
+        options: Some(vec!["<router-id>       - Enter the router-id"]),
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterOSPFMode) {
+                if let Some(router_id) = args.get(0) {
+                    let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                    ospf_config.router_id = Some(router_id.to_string());
+                    println!("Router ID set to: {}", router_id);
+                    Ok(())
+                } else {
+                    Err("Usage: router-id <id>".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                if let Some(router_id) = args.get(0) {
+                    if let Ok(router_id) = router_id.parse::<Ipv4Addr>() {
+                        let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                        eigrp_config.router_id = Some(router_id);
+                        println!("Router ID set to: {}", router_id);
+                        Ok(())
+                    } else {
+                        println!("Invalid IPv4 address format: {}", router_id);
+                        Err("Invalid IPv4 address.".into())
+                    }
+                } else {
+                    Err("Usage: router-id <id>".into())
+                }
+            } else if matches!(context.current_mode, Mode::RouterBGPMode) {
+                if let Some(router_id) = args.get(0) {
+                    if let Ok(router_id) = router_id.parse::<Ipv4Addr>() {
+                        let mut bgp_config = BGP_CONFIG.lock().unwrap();
+                        bgp_config.router_id = Some(router_id);
+                        println!("Router ID set to: {}", router_id);
+                        Ok(())
+                    } else {
+                        println!("Invalid IPv4 address format: {}", router_id);
+                        Err("Invalid IPv4 address.".into())
+                    }
+                } else {
+                    Err("Usage: router-id <id>".into())
+                }
+            }
+            else {
+                Err("The 'router-id' command is only available in Router OSPF , EIGRP and BGP modes.".into())
+            }
+        },
+    });
+
+    commands.insert("clear", Command {
+        name: "clear",
+        description: "Reset all OSPF processes",
+        suggestions: Some(vec!["ip ospf process"]),
+        suggestions1: None,
+        options: None,
+        execute: |args, context, _| {
+            if args.is_empty() {
+                // Cross-platform clear screen
+                if cfg!(target_os = "windows") {
+                    ProcessCommand::new("cmd")
+                        .args(["/C", "cls"])
+                        .status()
+                        .unwrap();
+                } else {
+                    ProcessCommand::new("clear")
+                        .status()
+                        .unwrap();
+                }
+                Ok(())
+            }
+            else if matches!(context.current_mode, Mode::PrivilegedMode) {
+                if args.len() == 3 && args[0] == "ip" && args[1] == "ospf" && args[2] == "process"  {
+                    print!("Reset ALL OSPF processes? [no]: ");
+                    io::stdout().flush().unwrap();
+                    
+                    let mut response = String::new();
+                    io::stdin().read_line(&mut response).unwrap();
+                    let response = response.trim().to_lowercase();
+                    
+                    // Check for yes/y or empty response
+                    if response == "yes" || response == "y" {
+                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
+                        *ospf_config = OSPFConfig::new();  
+                        println!("All OSPF processes cleared.");
+                        Ok(())
+                    } else {
+                        println!("Clear process cancelled.");
+                        Ok(())
+                    }
+                } else {
+                    Err("Invalid arguments provided to 'clear ip ospf process'. This command does not accept additional arguments.".into())
+                }
+            } else {
+                Err("The 'clear ip ospf process' command is only available in EXEC mode.".into())
+            }
+        },
+    });
+
+    commands.insert("auto-summary", Command {
+        name: "auto-summary",
+        description: "To restore the default behavior of automatic summarization of subnet routes into network-level routes",
+        suggestions: None,
+        suggestions1: None,
+        options: None,
+        execute: |args, context, _| {
+            if matches!(context.current_mode, Mode::RouterRIPMode) {
+                let mut rip_config = RIP_CONFIG.lock().unwrap();
+                rip_config.auto_summary = true; 
+                println!("Auto-summary enabled.");
+                Ok(())
+            } else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                let mut eigrp_config = EIGRP_CONFIG.lock().unwrap();
+                eigrp_config.auto_summary = true; 
+                println!("Auto-summary enabled.");
+                Ok(())
+            } 
+            else {
+                Err("The 'auto-summary' command is only available in Router RIP mode and Router EIGRP mode.".into())
+            }
+        },
+    });
 
     
     //VLAN Commands 
@@ -1915,318 +2610,6 @@ Two styles of help are provided:
                 }
             } else {
                 Err("The 'switchport' command is only available in Interface Configuration mode.".into())
-            }
-        },
-    });
-
-
-    // Routing Commands 
-
-    commands.insert("router", Command {
-        name: "router",
-        description: "Enable OSPF routing and enter router configuration mode",
-        suggestions: Some(vec!["ospf"]),
-        suggestions1: Some(vec!["ospf"]),
-        options: Some(vec!["<process-id>       - Enter the ospf process-id"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::ConfigMode) {
-                if args.len() == 2 && args[0] == "ospf"  {
-                    let process_id = args[1].parse::<u32>();
-                    match process_id {
-                        Ok(id) if id > 0 => {
-                            let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                            ospf_config.process_id = Some(id);
-                            context.current_mode = Mode::RouterConfigMode;
-                            context.prompt = format!("{}(config-router)#", context.config.hostname);
-                            println!("OSPF routing enabled with process ID {}.", id);
-                            Ok(())
-                        }
-                        _ => Err("Invalid process ID provided. It must be a positive integer.".into()),
-                    }
-                } else {
-                    Err("The 'router ospf' command requires exactly one argument: the process ID.".into())
-                }
-            } else {
-                Err("The 'router ospf' command is only available in Global Configuration mode.".into())
-            }
-        },
-    });
-
-    commands.insert("network", Command {
-        name: "network",
-        description: "Define an OSPF network and associate it with an area ID",
-        suggestions: None,
-        suggestions1: None,
-        options: Some(vec!["<ip-address>        - Enter the ip-address",
-            "<wildcard-mask>      - Enter the wildcard-mask",
-            "<area-id>          - Enter the area-id"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if args.len() == 4 {
-                    let ip_address = args[0].clone();
-                    let wildcard_mask = args[1].clone();
-                    let area_id = args[3].parse::<u32>();
-    
-                    if area_id.is_err() || ip_address.is_empty() || wildcard_mask.is_empty() {
-                        Err("Invalid arguments provided. Usage: network <ip-address> <wildcard-mask> area <area-id>".into())
-                    } else {
-                        let area_id = area_id.unwrap();
-                        let key = format!("{} {}", ip_address, wildcard_mask);
-                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                        ospf_config.networks.insert(key, area_id);
-                        println!(
-                            "Network {} {} added to OSPF area {}.",
-                            ip_address, wildcard_mask, area_id
-                        );
-                        Ok(())
-                    }
-                } else {
-                    Err("The 'network' command requires three arguments: <ip-address> <wildcard-mask> area <area-id>.".into())
-                }
-            } else {
-                Err("The 'network' command is only available in Router Configuration mode.".into())
-            }
-        },
-    });
-
-    commands.insert("neighbor", Command {
-        name: "neighbor",
-        description: "Specify a neighbor and optionally assign a cost.",
-        suggestions: None,
-        suggestions1: None,
-        options: Some(vec!["<ip-address>       - Emnter the ip-address",
-            "<cost>       - Enter the cost"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if args.is_empty() {
-                    return Err("Usage: neighbor <ip-address> [cost <number>]".into());
-                }
-    
-                let ip_address = Ipv4Addr::from_str(&args[0]).expect("Invalid IP address format");
-                let mut cost: Option<u32> = None;
-    
-                // Parse optional "cost <number>" arguments
-                if args.len() == 3 && args[1] == "cost" {
-                    match args[2].parse::<u32>() {
-                        Ok(value) => {
-                            cost = Some(value);
-                        }
-                        Err(_) => {
-                            return Err("Invalid cost value. It must be a positive integer.".into());
-                        }
-                    }
-                } else if args.len() != 1 {
-                    return Err("Usage: neighbor <ip-address> [cost <number>]".into());
-                }
-
-                let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                ospf_config.neighbors.insert(ip_address, cost);
-                
-                if let Some(cost_value) = cost {
-                    println!("Neighbor {} configured with cost {}.", ip_address, cost_value);
-                } else {
-                    println!("Neighbor {} configured with default cost.", ip_address);
-                }
-                Ok(())
-                
-            } else {
-                Err("The 'neighbor' command is only available in Router Configuration mode.".into())
-            }
-        },
-    });
-
-    commands.insert("area", Command {
-        name: "area",
-        description: "Configure OSPF area options.",
-        suggestions: Some(vec!["authentication", "stub", "default-cost"]),
-        suggestions1: None,
-        options: Some(vec!["<area-id>       - Enter the area-id"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if args.is_empty() {
-                    return Err("Usage: area <area-id> <subcommand> [options]".into());
-                }
-    
-                let area_id = args[0].clone();
-                let subcommand = args.get(1).map(|s| &s[..]).unwrap_or_default();
-    
-                match subcommand {
-                    "authentication" => {
-                        if args.len() == 2 {
-                            println!("Authentication enabled for area {}.", area_id);
-                            Ok(())
-                        } else {
-                            Err("Usage: area <area-id> authentication".into())
-                        }
-                    }
-                    "stub" => {
-                        if args.len() == 2 {
-                            println!("Area {} configured as a stub.", area_id);
-                            Ok(())
-                        } else if args.len() == 3 && args[2] == "no-summary" {
-                            println!("Area {} configured as a stub with no-summary.", area_id);
-                            Ok(())
-                        } else {
-                            Err("Usage: area <area-id> stub [no-summary]".into())
-                        }
-                    }
-                    "default-cost" => {
-                        if args.len() == 3 {
-                            match args[2].parse::<u32>() {
-                                Ok(cost) => {
-                                    println!("Default cost for area {} set to {}.", area_id, cost);
-                                    Ok(())
-                                }
-                                Err(_) => Err("Invalid cost value. It must be a positive integer.".into()),
-                            }
-                        } else {
-                            Err("Usage: area <area-id> default-cost <cost>".into())
-                        }
-                    }
-                    _ => Err("Invalid subcommand. Valid subcommands: authentication, stub, default-cost".into()),
-                }
-            } else {
-                Err("The 'area' command is only available in Router Configuration mode.".into())
-            }
-        },
-    });
-
-    commands.insert("passive-interface", Command {
-        name: "passive-interface",
-        description: "Disables sending OSPF Hello packets on an interface",
-        suggestions: None,
-        suggestions1: None,
-        options: Some(vec!["<interface>     - Enter the interface name"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if let Some(interface) = args.get(0) {
-                    let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                    ospf_config.passive_interfaces.push(interface.to_string());
-                    println!("Passive interface set on: {}", interface);
-                    Ok(())
-                } else {
-                    Err("Usage: passive-interface <interface>".into())
-                }
-            } else {
-                Err("The 'passive-interface' command is only available in Router OSPF mode.".into())
-            }
-        },
-    });
-    
-
-    commands.insert("distance", Command {
-        name: "distance",
-        description: "Set administrative distance for OSPF",
-        suggestions: None,
-        suggestions1: None,
-        options: Some(vec!["<distance>      - Set the distance"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if let Some(distance) = args.get(0) {
-                    if let Ok(dist) = distance.parse::<u32>() {
-                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                        ospf_config.distance = Some(dist);
-                        println!("OSPF administrative distance set to: {}", dist);
-                        Ok(())
-                    } else {
-                        Err("Invalid distance value. Must be a number.".into())
-                    }
-                } else {
-                    Err("Usage: distance <value>".into())
-                }
-            } else {
-                Err("The 'distance' command is only available in Router OSPF mode.".into())
-            }
-        },
-    });
-
-    commands.insert("default-information", Command {
-        name: "default-information",
-        description: "Originate a default route in OSPF",
-        suggestions: Some(vec!["originate"]),
-        suggestions1: Some(vec!["originate"]),
-        options: None,
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if args.get(0).map(|s| &s[..]) == Some("originate") {
-                    println!("Default-information originate command executed.");
-                    Ok(())
-                } else {
-                    Err("Usage: default-information originate".into())
-                }
-            } else {
-                Err("The 'default-information originate' command is only available in Router OSPF mode.".into())
-            }
-        },
-    });
-
-    commands.insert("router-id", Command {
-        name: "router-id",
-        description: "Set the router ID for the OSPF process",
-        suggestions: None,
-        suggestions1: None,
-        options: Some(vec!["<router-id>       - Enter the router-id"]),
-        execute: |args, context, _| {
-            if matches!(context.current_mode, Mode::RouterConfigMode) {
-                if let Some(router_id) = args.get(0) {
-                    let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                    ospf_config.router_id = Some(router_id.to_string());
-                    println!("Router ID set to: {}", router_id);
-                    Ok(())
-                } else {
-                    Err("Usage: router-id <id>".into())
-                }
-            } else {
-                Err("The 'router-id' command is only available in Router OSPF mode.".into())
-            }
-        },
-    });
-
-    commands.insert("clear", Command {
-        name: "clear",
-        description: "Reset all OSPF processes",
-        suggestions: Some(vec!["ip ospf process"]),
-        suggestions1: None,
-        options: None,
-        execute: |args, context, _| {
-            if args.is_empty() {
-                // Cross-platform clear screen
-                if cfg!(target_os = "windows") {
-                    ProcessCommand::new("cmd")
-                        .args(["/C", "cls"])
-                        .status()
-                        .unwrap();
-                } else {
-                    ProcessCommand::new("clear")
-                        .status()
-                        .unwrap();
-                }
-                Ok(())
-            }
-            else if matches!(context.current_mode, Mode::PrivilegedMode) {
-                if args.len() == 3 && args[0] == "ip" && args[1] == "ospf" && args[2] == "process"  {
-                    print!("Reset ALL OSPF processes? [no]: ");
-                    io::stdout().flush().unwrap();
-                    
-                    let mut response = String::new();
-                    io::stdin().read_line(&mut response).unwrap();
-                    let response = response.trim().to_lowercase();
-                    
-                    // Check for yes/y or empty response
-                    if response == "yes" || response == "y" {
-                        let mut ospf_config = OSPF_CONFIG.lock().unwrap();
-                        *ospf_config = OSPFConfig::new();  
-                        println!("All OSPF processes cleared.");
-                        Ok(())
-                    } else {
-                        println!("Clear process cancelled.");
-                        Ok(())
-                    }
-                } else {
-                    Err("Invalid arguments provided to 'clear ip ospf process'. This command does not accept additional arguments.".into())
-                }
-            } else {
-                Err("The 'clear ip ospf process' command is only available in EXEC mode.".into())
             }
         },
     });

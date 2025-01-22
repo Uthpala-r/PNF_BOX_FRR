@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["convert_to_command","get_registered_commands","register_command","str_to_static","vec_str_to_static"],"struct":["DYNAMIC_COMMANDS"]};

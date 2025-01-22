@@ -56,7 +56,7 @@ pub struct Command {
 ///   Represents the interface configuration mode for managing individual network interfaces.
 /// - `VlanMode`:  
 ///   Represents the VLAN configuration mode for managing VLANs.
-/// - `RouterConfigMode`:  
+/// - `RouterOSPFMode`:  
 ///   Represents the router configuration mode for managing routing protocols such as OSPF or BGP.
 /// - `ConfigStdNaclMode(String)`:  
 ///   Represents the configuration mode for standard Access Control Lists (ACLs). The `String` parameter 
@@ -74,7 +74,7 @@ pub struct Command {
 ///     Mode::ConfigMode => println!("In configuration mode"),
 ///     Mode::InterfaceMode => println!("In interface configuration mode"),
 ///     Mode::VlanMode => println!("In VLAN configuration mode"),
-///     Mode::RouterConfigMode => println!("In router configuration mode"),
+///     Mode::RouterOSPFMode => println!("In router configuration mode"),
 ///     Mode::ConfigStdNaclMode(acl) => println!("Configuring standard ACL: {}", acl),
 ///     Mode::ConfigExtNaclMode(acl) => println!("Configuring extended ACL: {}", acl),
 /// }
@@ -86,7 +86,11 @@ pub enum Mode {
     ConfigMode,
     InterfaceMode,
     VlanMode,
-    RouterConfigMode,
+    RouterOSPFMode,
+    RouterRIPMode,
+    RouterEIGRPMode,
+    RouterISISMode,
+    RouterBGPMode,
     ConfigStdNaclMode(String),
     ConfigExtNaclMode(String),
 }
@@ -237,7 +241,7 @@ pub fn execute_command(input: &str, commands: &HashMap<&str, Command>, context: 
                     .copied()
                     .collect()
             }
-            Mode::RouterConfigMode => {
+            Mode::RouterOSPFMode => {
                 commands.keys()
                     .filter(|&&cmd| {
                         cmd == "network" ||
@@ -249,8 +253,77 @@ pub fn execute_command(input: &str, commands: &HashMap<&str, Command>, context: 
                         cmd == "distance" ||
                         cmd == "help" ||
                         cmd == "reload" ||
+                        cmd == "no" ||
                         cmd == "default-information" ||
+                        //cmd == "router" ||
                         cmd == "router-id"
+
+                    })
+                    .copied()
+                    .collect()
+            }
+            Mode::RouterRIPMode => {
+                commands.keys()
+                    .filter(|&&cmd| {
+                        //cmd == "router" ||
+                        cmd == "network" ||
+                        cmd == "passive-interface" ||
+                        cmd == "auto-summary" ||
+                        cmd == "exit" ||
+                        cmd == "clear" ||
+                        cmd == "reload" ||
+                        cmd == "help" ||
+                        cmd == "no"
+
+                    })
+                    .copied()
+                    .collect()
+            }
+            Mode::RouterEIGRPMode => {
+                commands.keys()
+                    .filter(|&&cmd| {
+                        //cmd == "router" ||
+                        cmd == "network" ||
+                        cmd == "passive-interface" ||
+                        cmd == "auto-summary" ||
+                        cmd == "exit" ||
+                        cmd == "clear" ||
+                        cmd == "reload" ||
+                        cmd == "help" ||
+                        cmd == "no" ||
+                        cmd == "router-id"
+
+                    })
+                    .copied()
+                    .collect()
+            }
+            Mode::RouterISISMode => {
+                commands.keys()
+                    .filter(|&&cmd| {
+                        //cmd == "router" ||
+                        cmd == "network" ||
+                        cmd == "exit" ||
+                        cmd == "clear" ||
+                        cmd == "reload" ||
+                        cmd == "help" ||
+                        cmd == "no" 
+
+                    })
+                    .copied()
+                    .collect()
+            }
+            Mode::RouterBGPMode => {
+                commands.keys()
+                    .filter(|&&cmd| {
+                        //cmd == "router" ||
+                        cmd == "router-id" ||
+                        cmd == "distance" ||
+                        cmd == "network" ||
+                        cmd == "exit" ||
+                        cmd == "clear" ||
+                        cmd == "reload" ||
+                        cmd == "help" ||
+                        cmd == "no" 
 
                     })
                     .copied()
@@ -417,7 +490,7 @@ Two styles of help are provided:
                     println!("clear             - Clear the terminal");
                     println!("help              - Display available commands");
                 }
-                else if matches!(context.current_mode, Mode::RouterConfigMode) {
+                else if matches!(context.current_mode, Mode::RouterOSPFMode) {
                     println!("network           - Configure network");
                     println!("exit              - Exit to config mode");
                     println!("neighbor          - Configure BGP neighbor");
@@ -425,6 +498,42 @@ Two styles of help are provided:
                     println!("passive-interface - Configure passive interface");
                     println!("distance          - Configure administrative distance");
                     println!("default-information - Configure default route distribution");
+                    println!("router-id         - Configure router ID");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                } 
+                else if matches!(context.current_mode, Mode::RouterRIPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("passive-interface - Configure passive interface");
+                    println!("distance          - Configure administrative distance");
+                    println!("auto-summary      - To restore automatic summarization");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterEIGRPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("passive-interface - Configure passive interface");
+                    println!("distance          - Configure administrative distance");
+                    println!("auto-summary      - To restore automatic summarization");
+                    println!("router-id         - Configure router ID");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterISISMode) {
+                    println!("exit              - Exit to config mode");
+                    println!("reload            - Reload the system");
+                    println!("clear             - Clear the terminal");
+                    println!("help              - Display available commands");
+                }
+                else if matches!(context.current_mode, Mode::RouterBGPMode) {
+                    println!("network           - Configure network");
+                    println!("exit              - Exit to config mode");
+                    println!("distance          - Configure administrative distance");
                     println!("router-id         - Configure router ID");
                     println!("reload            - Reload the system");
                     println!("clear             - Clear the terminal");

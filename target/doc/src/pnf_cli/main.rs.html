@@ -171,13 +171,23 @@
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a></pre></div><pre class="rust"><code><span class="doccomment">//! # PNF Command-Line Interface (CLI) Application
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a></pre></div><pre class="rust"><code><span class="doccomment">//! # PNF Command-Line Interface (CLI) Application
 //!
 //! This file serves as the main module that initializes and links all other sub-modules.
 //! The CLI provides a hierarchical command structure similar to Cisco's networking devices.
 
+</span><span class="comment">//main.rs
 
-/// Modules included in the CLI application
+</span><span class="doccomment">/// Modules included in the CLI application
 </span><span class="kw">mod </span>cliconfig;
 <span class="kw">mod </span>commandcompleter;
 <span class="kw">mod </span>clicommands;
@@ -185,6 +195,8 @@
 <span class="kw">mod </span>run_config;
 <span class="kw">mod </span>execute;
 <span class="kw">mod </span>network_config;
+<span class="kw">mod </span>dynamic_registry;
+<span class="kw">mod </span>new_commands;
 
 
 <span class="doccomment">/// Internal imports from the application's modules
@@ -195,6 +207,8 @@
 <span class="kw">use </span>execute::execute_command;
 <span class="kw">use </span>clock_settings::Clock;
 <span class="kw">use </span><span class="kw">crate</span>::execute::Mode;
+<span class="kw">use </span><span class="kw">crate</span>::dynamic_registry::register_command;
+<span class="kw">use </span><span class="kw">crate</span>::new_commands::register_custom_commands;
 
 
 <span class="doccomment">/// External crates for the CLI application
@@ -203,7 +217,6 @@
 <span class="kw">use </span>rustyline::history::DefaultHistory;
 <span class="kw">use </span>std::collections::{HashSet, HashMap};
 <span class="kw">use </span>ctrlc;
-
 
 <span class="doccomment">/// Main function of the CLI application.
 ///
@@ -249,7 +262,7 @@
     <span class="comment">// Build the registry of commands and retrieve their names
     </span><span class="kw">let </span>commands = build_command_registry();
     <span class="kw">let </span>command_names: Vec&lt;String&gt; = commands.keys().cloned().map(String::from).collect();
-    
+
     <span class="comment">// Define the initial hostname as "Router"
     </span><span class="kw">let </span>initial_hostname = <span class="string">"Router"</span>.to_string();
     
@@ -293,6 +306,10 @@
     rl.set_helper(<span class="prelude-val">Some</span>(completer));
     rl.load_history(<span class="string">"history.txt"</span>).ok();
 
+    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = register_custom_commands() {
+        <span class="macro">eprintln!</span>(<span class="string">"Failed to register commands: {}"</span>, e);
+    }
+
     <span class="comment">// Set up the initial clock settings
     </span><span class="kw">let </span><span class="kw-2">mut </span>clock = <span class="prelude-val">Some</span>(Clock::new());
     
@@ -325,6 +342,7 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(helper) = rl.helper_mut() {
                     execute_command(input, <span class="kw-2">&amp;</span>commands, <span class="kw-2">&amp;mut </span>context, <span class="kw-2">&amp;mut </span>clock, helper);
                     helper.current_mode = context.current_mode.clone();
+                    helper.refresh_completions().ok();
                 }
                       
             }

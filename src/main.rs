@@ -15,6 +15,7 @@ mod execute;
 mod network_config;
 mod dynamic_registry;
 mod new_commands;
+mod walkup;
 
 
 /// Internal imports from the application's modules
@@ -24,7 +25,7 @@ use commandcompleter::CommandCompleter;
 use clicommands::build_command_registry;
 use execute::execute_command;
 use clock_settings::Clock;
-use crate::execute::Mode;
+use crate::execute::{Mode, Command};
 use crate::dynamic_registry::register_command;
 use crate::new_commands::register_custom_commands;
 
@@ -78,8 +79,8 @@ use ctrlc;
 fn main() {
 
     // Build the registry of commands and retrieve their names
-    let commands = build_command_registry();
-    let command_names: Vec<String> = commands.keys().cloned().map(String::from).collect();
+    let fun_commands = build_command_registry();
+    let command_names: Vec<String> = fun_commands.keys().cloned().map(String::from).collect();
 
     // Define the initial hostname as "Router"
     let initial_hostname = "Router".to_string();
@@ -87,6 +88,7 @@ fn main() {
     // Define the context for the CLI
     let mut context = CliContext {
         current_mode: Mode::UserMode,
+        //commands: HashMap::new(),
         config: CliConfig::default(),
         prompt: format!("{}>", CliConfig::default().hostname),
         selected_interface: None,
@@ -158,7 +160,7 @@ fn main() {
                 }
 
                 if let Some(helper) = rl.helper_mut() {
-                    execute_command(input, &commands, &mut context, &mut clock, helper);
+                    execute_command(input, &fun_commands, &mut context, &mut clock, helper);
                     helper.current_mode = context.current_mode.clone();
                     helper.refresh_completions().ok();
                 }

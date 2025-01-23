@@ -1,52 +1,4 @@
 #V2
-exit
-exit cli
-en
-conf t
-router rip
-network 192.178.1.1
-network eth8
-exit cli
-en
-exit cli
-en
-conf t
-router rip
-auto-summary
-no auto-summaty
-no auto-summary
-exut cli
-exit cli
-en
-conf t
-router rip\\
-router rip
-auto-summary
-no auto-summary
-exit cli
-en
-conf t
-router rip
-network 192.168.1.1
-exit
-show ip rip
-conf t
-router rip
-auto-summary
-exit
-show ip rip
-exity cli
-exit cli
-en
-conf t
-router eigrp 3
-exit cli
-en
-conf t
-router eigrp 5
-no auto-summary
-passive-interface g0/0
-network
 network 192.168.19.2 0.0.0.0 area 5
 exit cli
 en
@@ -98,4 +50,52 @@ hos R1
 enable password Hi
 exit
 en
+exit cli
+en
+conf t
+exit cli
+en
+exit cli
+en
+exit cli
+en
+con?
+configure terminal >?
+configure terminal ?
+configure terminal
+int g0/0
+exit cli
+en
+conf t
+int g0/0
+host R1
+exit cli
+en
+conf t
+int g0/0
+hostname R1
+exit cli
+en
+conf t
+int g0/0
+interface 192.189.1.1 255.255.255.0
+ip address 192.178.1.1 3.3.3.3
+router ospf 5
+enable secret Hi
+exit
+en
+conf t
+router rip
+hos R1
+hostname R1
+exit cli
+en
+conf t
+router rip
+hostanem R1
+hostname R2 R1
+exit
+conf t
+interface range h0/9-9
+exitb cli
 exit cli

@@ -1,7 +1,7 @@
 /// External crates for the CLI application
 use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
-use crate::execute::Mode;
+use crate::execute::{Mode, Command};
 use crate::network_config::NtpAssociation;
 
 
@@ -98,6 +98,7 @@ impl Default for CliConfig {
 /// 
 pub struct CliContext {
     pub current_mode: Mode,
+    //pub commands: HashMap<&'static str, Command>,
     pub prompt: String,
     pub config: CliConfig,
     pub selected_interface: Option<String>,
@@ -141,6 +142,7 @@ impl Default for CliContext {
     fn default() -> Self {
         Self {
             current_mode: Mode::UserMode,
+            //commands: HashMap::new(),
             prompt: "Router>".into(),
             config: CliConfig::default(),
             selected_interface: None,

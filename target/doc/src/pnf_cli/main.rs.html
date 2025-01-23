@@ -180,7 +180,9 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a></pre></div><pre class="rust"><code><span class="doccomment">//! # PNF Command-Line Interface (CLI) Application
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a></pre></div><pre class="rust"><code><span class="doccomment">//! # PNF Command-Line Interface (CLI) Application
 //!
 //! This file serves as the main module that initializes and links all other sub-modules.
 //! The CLI provides a hierarchical command structure similar to Cisco's networking devices.
@@ -197,6 +199,7 @@
 <span class="kw">mod </span>network_config;
 <span class="kw">mod </span>dynamic_registry;
 <span class="kw">mod </span>new_commands;
+<span class="kw">mod </span>walkup;
 
 
 <span class="doccomment">/// Internal imports from the application's modules
@@ -206,7 +209,7 @@
 <span class="kw">use </span>clicommands::build_command_registry;
 <span class="kw">use </span>execute::execute_command;
 <span class="kw">use </span>clock_settings::Clock;
-<span class="kw">use </span><span class="kw">crate</span>::execute::Mode;
+<span class="kw">use </span><span class="kw">crate</span>::execute::{Mode, Command};
 <span class="kw">use </span><span class="kw">crate</span>::dynamic_registry::register_command;
 <span class="kw">use </span><span class="kw">crate</span>::new_commands::register_custom_commands;
 
@@ -260,8 +263,8 @@
 </span><span class="kw">fn </span>main() {
 
     <span class="comment">// Build the registry of commands and retrieve their names
-    </span><span class="kw">let </span>commands = build_command_registry();
-    <span class="kw">let </span>command_names: Vec&lt;String&gt; = commands.keys().cloned().map(String::from).collect();
+    </span><span class="kw">let </span>fun_commands = build_command_registry();
+    <span class="kw">let </span>command_names: Vec&lt;String&gt; = fun_commands.keys().cloned().map(String::from).collect();
 
     <span class="comment">// Define the initial hostname as "Router"
     </span><span class="kw">let </span>initial_hostname = <span class="string">"Router"</span>.to_string();
@@ -269,7 +272,8 @@
     <span class="comment">// Define the context for the CLI
     </span><span class="kw">let </span><span class="kw-2">mut </span>context = CliContext {
         current_mode: Mode::UserMode,
-        config: CliConfig::default(),
+        <span class="comment">//commands: HashMap::new(),
+        </span>config: CliConfig::default(),
         prompt: <span class="macro">format!</span>(<span class="string">"{}&gt;"</span>, CliConfig::default().hostname),
         selected_interface: <span class="prelude-val">None</span>,
         selected_vlan: <span class="prelude-val">None</span>,
@@ -340,7 +344,7 @@
                 }
 
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(helper) = rl.helper_mut() {
-                    execute_command(input, <span class="kw-2">&amp;</span>commands, <span class="kw-2">&amp;mut </span>context, <span class="kw-2">&amp;mut </span>clock, helper);
+                    execute_command(input, <span class="kw-2">&amp;</span>fun_commands, <span class="kw-2">&amp;mut </span>context, <span class="kw-2">&amp;mut </span>clock, helper);
                     helper.current_mode = context.current_mode.clone();
                     helper.refresh_completions().ok();
                 }

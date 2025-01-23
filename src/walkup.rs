@@ -1,20 +1,36 @@
 //walkup.rs
 
+/// A module for managing and executing commands in a hierarchical mode structure.
+/// This module defines the `Mode` enum, `ModeHierarchy` struct, and associated functions
+/// for navigating through command modes and executing commands
+
 use crate::execute::{Mode, Command, get_mode_commands};
 use std::collections::HashMap;
 use std::fmt;
 
 impl fmt::Display for Mode {
+    /// Implements the `fmt::Display` trait for the `Mode` enum, enabling user-friendly
+    /// string representation of a mode.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
+/// Represents the hierarchy of modes and their relationships.
+/// Modes can have parent modes, allowing commands to be inherited
+/// from higher-level modes.
 pub struct ModeHierarchy {
+    /// A mapping of each mode to its parent mode.
+    /// If a mode has no parent, the value will be `None`.
     pub parent_map: HashMap<Mode, Option<Mode>>,
 }
 
 impl ModeHierarchy {
+    /// Creates a new `ModeHierarchy` with predefined parent-child relationships
+    /// between various command modes.
+    ///
+    /// # Returns
+    /// A new instance of `ModeHierarchy` with the initialized parent map.
     pub fn new() -> Self {
         let mut parent_map = HashMap::new();
         
@@ -34,6 +50,17 @@ impl ModeHierarchy {
         Self { parent_map }
     }
 
+    /// Finds the mode in which a given command is valid, starting from the
+    /// `initial_mode` and walking up the hierarchy until the command is found
+    /// or the top of the hierarchy is reached.
+    ///
+    /// # Arguments
+    /// * `initial_mode` - The starting mode to search from.
+    /// * `command` - The command to search for.
+    ///
+    /// # Returns
+    /// * `Some(Mode)` - The mode in which the command is valid.
+    /// * `None` - If the command is not valid in any mode.
     pub fn walkup_find_command(&self, initial_mode: Mode, command: &str) -> Option<Mode> {
         let mut current_mode = initial_mode;
         
@@ -59,6 +86,15 @@ impl ModeHierarchy {
         }
     }
 
+    /// Checks if a command is allowed in a specific mode.
+    ///
+    /// # Arguments
+    /// * `command` - The command to check.
+    /// * `mode` - The mode to check the command against.
+    ///
+    /// # Returns
+    /// * `true` - If the command is allowed in the mode.
+    /// * `false` - Otherwise.
     pub fn is_command_allowed_in_mode(command: &str, mode: &Mode) -> bool {
         match mode {
             Mode::UserMode => 
@@ -195,13 +231,21 @@ impl ModeHierarchy {
 
 }
 
+/// Represents the current command context, including the current mode
+/// and the hierarchy of modes.
 pub struct CommandContext{
+    /// The current mode of the command context.
     pub current_mode: Mode,
+    /// The mode hierarchy for navigating through command modes.
     pub mode_hierarchy: ModeHierarchy,
-    //pub commands: &'a HashMap<&'a str, Command>,
 }
 
 impl CommandContext  {
+    /// Creates a new `CommandContext` with the default starting mode (`UserMode`)
+    /// and an initialized mode hierarchy.
+    ///
+    /// # Returns
+    /// A new instance of `CommandContext`.
     fn new() -> Self {
         Self {
             current_mode: Mode::UserMode,
@@ -210,7 +254,13 @@ impl CommandContext  {
         }
     }
 
-    fn execute_command(&mut self, command: &str) -> Result<(), String> {
+    /// Executes a command in the current context.
+    /// If the command is not valid in the current mode, the function
+    /// walks up the hierarchy to find a mode in which the command is valid.
+    ///
+    /// # Arguments
+    /// * `command` - The command to execute.
+    pub fn execute_command(&mut self, command: &str) -> Result<(), String> {
         match self.mode_hierarchy.walkup_find_command(self.current_mode.clone(), command) {
             Some(valid_mode) => {
                 if valid_mode != self.current_mode {
@@ -223,7 +273,7 @@ impl CommandContext  {
         }
     }
 
-    fn process_command(&self, command: &str) -> Result<(), String> {
+    pub fn process_command(&self, command: &str) -> Result<(), String> {
         println!("Executing command '{}' in {:?} mode", command, self.current_mode);
         Ok(())
     }

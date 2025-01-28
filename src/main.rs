@@ -60,10 +60,10 @@ use ctrlc;
 ///
 /// # Example Usage
 /// ```bash
-/// > Router> enable
-/// > Router# configure terminal
-/// > Router(config)# exit
-/// > Router# exit cli
+/// > Network> enable
+/// > Network# configure terminal
+/// > Network(config)# exit
+/// > Network# exit cli
 /// Exiting CLI...
 /// ```
 ///
@@ -89,8 +89,8 @@ fn main() {
 
     let command_names: Vec<String> = fun_commands.keys().cloned().map(String::from).collect();
 
-    // Define the initial hostname as "Router"
-    let initial_hostname = "Router".to_string();
+    // Define the initial hostname as "Network"
+    let initial_hostname = "Network".to_string();
     
     // Define the context for the CLI
     let mut context = CliContext {

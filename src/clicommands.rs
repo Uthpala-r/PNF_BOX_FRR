@@ -328,31 +328,31 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                     Mode::RouterOSPFMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
-                        println!("Exiting Router Configuration Mode Mode...");
+                        println!("Exiting OSPF Configuration Mode...");
                         Ok(())
                     }
                     Mode::RouterRIPMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
-                        println!("Exiting Router Configuration Mode Mode...");
+                        println!("Exiting RIP Configuration Mode...");
                         Ok(())
                     }
                     Mode::RouterISISMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
-                        println!("Exiting Router Configuration Mode Mode...");
+                        println!("Exiting ISIS Configuration Mode...");
                         Ok(())
                     }
                     Mode::RouterEIGRPMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
-                        println!("Exiting Router Configuration Mode Mode...");
+                        println!("Exiting EIGRP Configuration Mode...");
                         Ok(())
                     }
                     Mode::RouterBGPMode => {
                         context.current_mode = Mode::ConfigMode;
                         context.prompt = format!("{}(config)#", context.config.hostname);
-                        println!("Exiting Router Configuration Mode Mode...");
+                        println!("Exiting BGP Configuration Mode...");
                         Ok(())
                     }
                     Mode::ConfigStdNaclMode(_) => {
@@ -531,7 +531,7 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
         "ifconfig",
         Command {
             name: "ifconfig",
-            description: "Display or configure network details of the router",
+            description: "Display or configure network details of the device",
             suggestions: None,
             suggestions1: None,
             options: Some(vec!["<interface      - Enter the interface you need to change the ip-address of or need to add", 
@@ -638,7 +638,7 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                             }
                             println!(" ");
                             println!("Device Details... ");
-                            println!("PNF Router");
+                            println!("PNF Box");
                             Ok(())
                         },
                         Some(&"interfaces") => {

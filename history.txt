@@ -76,3 +76,14 @@ exit
 configure ?
 configure terminal ?
 exit cli
+en
+conf t
+hello
+hello config
+hel con
+hell con
+int g0/0
+exut
+exit
+router ospf 23
+exit cli

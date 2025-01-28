@@ -16,7 +16,7 @@ use crate::network_config::NtpAssociation;
 /// # Examples
 /// ```
 /// let config = CliConfig::default();
-/// assert_eq!(config.hostname, "Router");
+/// assert_eq!(config.hostname, "Network");
 /// ```
 /// 
 #[derive(Serialize, Deserialize, Clone)]
@@ -48,7 +48,7 @@ impl Default for CliConfig {
     ///
     /// - `running_config`: An empty `HashMap`.
     /// - `startup_config`: An empty `HashMap`.
-    /// - `hostname`: `"Router"`.
+    /// - `hostname`: `"Network"`.
     /// - `crypto_ipsec_profile: None`,
     /// - `transform_sets: None`,
     /// - `tunnel_mode: None`,
@@ -64,7 +64,7 @@ impl Default for CliConfig {
         Self {
             running_config: None,
             startup_config: None,
-            hostname: "Router".to_string(),
+            hostname: "Network".to_string(),
             crypto_ipsec_profile: None,
             transform_sets: None,
             tunnel_mode: None,
@@ -93,7 +93,7 @@ impl Default for CliConfig {
 /// # Examples
 /// ```
 /// let context = CliContext::default();
-/// assert_eq!(context.prompt, "Router>");
+/// assert_eq!(context.prompt, "Network>");
 /// ```
 /// 
 pub struct CliContext {
@@ -123,7 +123,7 @@ impl Default for CliContext {
     /// Provides the default values for `CliContext`.
     ///
     /// - `current_mode`: `Mode::UserMode`.
-    /// - `prompt`: `"Router>"`.
+    /// - `prompt`: `"Network>"`.
     /// - `config`: The default configuration provided by `CliConfig::default()`.
     /// - `selected_interface`: `None`.
     /// - `selected_vlan`: `None`.
@@ -143,7 +143,7 @@ impl Default for CliContext {
         Self {
             current_mode: Mode::UserMode,
             //commands: HashMap::new(),
-            prompt: "Router>".into(),
+            prompt: "Network>".into(),
             config: CliConfig::default(),
             selected_interface: None,
             selected_vlan: None,

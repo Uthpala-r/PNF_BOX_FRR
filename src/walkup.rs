@@ -5,6 +5,7 @@
 /// for navigating through command modes and executing commands
 
 use crate::execute::{Mode, Command, get_mode_commands};
+use crate::dynamic_registry::{get_mode_commands_FNC, DYNAMIC_COMMANDS};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -66,7 +67,9 @@ impl ModeHierarchy {
         
         loop {
             // Try to match the command in the current mode
-            if Self::is_command_allowed_in_mode(command, &current_mode) {
+            if Self::is_command_allowed_in_mode(command, &current_mode) || 
+                get_mode_commands_FNC(&DYNAMIC_COMMANDS.read().unwrap(), &current_mode)
+                    .contains(&command){
                 return Some(current_mode);
             }
             

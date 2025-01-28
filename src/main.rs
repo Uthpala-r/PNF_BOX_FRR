@@ -26,7 +26,7 @@ use clicommands::build_command_registry;
 use execute::execute_command;
 use clock_settings::Clock;
 use crate::execute::{Mode, Command};
-use crate::dynamic_registry::register_command;
+use crate::dynamic_registry::get_registered_commands;
 use crate::new_commands::register_custom_commands;
 
 
@@ -79,7 +79,14 @@ use ctrlc;
 fn main() {
 
     // Build the registry of commands and retrieve their names
-    let fun_commands = build_command_registry();
+    let mut fun_commands = build_command_registry();
+
+    register_custom_commands();
+    let dynamic_commands = get_registered_commands()
+        .expect("Failed to get dynamic commands");
+    
+    fun_commands.extend(dynamic_commands);
+
     let command_names: Vec<String> = fun_commands.keys().cloned().map(String::from).collect();
 
     // Define the initial hostname as "Router"
@@ -126,9 +133,6 @@ fn main() {
     rl.set_helper(Some(completer));
     rl.load_history("history.txt").ok();
 
-    if let Err(e) = register_custom_commands() {
-        eprintln!("Failed to register commands: {}", e);
-    }
 
     // Set up the initial clock settings
     let mut clock = Some(Clock::new());

@@ -2,7 +2,7 @@
 use crate::build_command_registry;
 use crate::execute::Mode;
 use crate::execute::Command;
-use crate::dynamic_registry::get_registered_commands;
+use crate::dynamic_registry::{get_registered_commands, get_mode_commands_FNC, DYNAMIC_COMMANDS};
 
 use rustyline::hint::Hinter;
 use rustyline::Helper;
@@ -108,10 +108,28 @@ impl Completer for CommandCompleter {
 
         let parts: Vec<&str> = query.trim_end().split_whitespace().collect();
 
+        let converted_commands: HashMap<&str, Command> = self.commands
+            .iter()
+            .filter_map(|(k, _v)| {
+                if let Ok(cmd_map) = DYNAMIC_COMMANDS.read() {
+                    if let Some(cmd) = cmd_map.get(k.as_str()) {
+                        Some((k.as_str(), cmd.clone()))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         // Filter commands allowed in the current mode
         let allowed_commands: Vec<(&str, &Command)> = suggestions
             .iter()
-            .filter(|(&command, _)| is_command_allowed_in_mode(&command.to_string(), &self.current_mode))
+            .filter(|(&command, _)| {
+                is_command_allowed_in_mode(&command.to_string(), &self.current_mode) 
+                || get_mode_commands_FNC(&converted_commands, &self.current_mode).contains(&command)
+            })
             .map(|(command, cmd)| (*command, cmd))
             .collect();
 

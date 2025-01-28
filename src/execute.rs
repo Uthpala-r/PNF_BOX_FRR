@@ -6,6 +6,8 @@ use crate::Clock;
 use crate::CliContext;
 use crate::commandcompleter::CommandCompleter;
 use crate::walkup::ModeHierarchy;
+use crate::dynamic_registry::{get_registered_commands, get_mode_commands_FNC};
+//use crate::new_commands::get_mode_commands_FNC;
 
 /// Represents a command that can be executed in the CLI.
 ///
@@ -146,7 +148,8 @@ pub fn execute_command(input: &str, commands: &HashMap<&str, Command>, context: 
      
     let parts: Vec<&str> = normalized_input.split_whitespace().collect();
    
-    let available_commands = get_mode_commands(commands, &context.current_mode);
+    let mut available_commands = get_mode_commands(commands, &context.current_mode);
+    available_commands.extend(get_mode_commands_FNC(commands, &context.current_mode));
 
     // Handle suggestions if '?' was present
     if showing_suggestions {
@@ -313,7 +316,7 @@ Two styles of help are provided:
             1 => {
                 let command_name = parts[0].trim();
                 // Handle single word with ? (e.g., "configure ?")
-                let available_commands = get_mode_commands(commands, &context.current_mode);
+                //let available_commands = get_mode_commands(commands, &context.current_mode);
                 if available_commands.contains(&command_name) {
                     // If it's an exact command match, show its subcommands
                     if let Some(cmd) = commands.get(command_name) {
@@ -360,7 +363,7 @@ Two styles of help are provided:
             },
             2 => {
                 // Command with partial subcommand (e.g., "configure t?", "configure term?")
-                let available_commands = get_mode_commands(commands, &context.current_mode);
+                //let available_commands = get_mode_commands(commands, &context.current_mode);
                 if available_commands.contains(&parts[0]) && !normalized_input.ends_with(' ') {
                     if let Some(cmd) = commands.get(parts[0]) {
                         if let Some(suggestions) = &cmd.suggestions1 {
@@ -414,9 +417,7 @@ Two styles of help are provided:
     };
 
     let mode_hierarchy = ModeHierarchy::new();
-    match mode_hierarchy.walkup_find_command(context.current_mode.clone(), cmd_key) {
-        Some(valid_mode) => {
-            // Update mode if walkup occurs
+    if let Some(valid_mode) = mode_hierarchy.walkup_find_command(context.current_mode.clone(), cmd_key) {
             if valid_mode != context.current_mode {
                 println!("Walkup: Command '{}' found in {} mode", cmd_key, valid_mode);
                 context.current_mode = valid_mode.clone();
@@ -457,11 +458,27 @@ Two styles of help are provided:
                         println!("Error: {}", err);
                     }
                 }
+            
+        }
+    }
+    else if let Ok(dynamic_commands) = get_registered_commands() {
+        if let Some(dynamic_command) = dynamic_commands.get(cmd_key) {
+            match (dynamic_command.execute)(&parts[1..], context, clock) {
+                Ok(_) => {
+                    println!("Dynamic command '{}' executed successfully.", cmd_key);
+                    return;
+                }
+                Err(err) => {
+                    println!("Error: {}", err);
+                    return;
+                }
+                
             }
         }
-        None => {
-            println!("Command '{}' not found in the current or parent modes.", cmd_key);
-        }
+    }
+
+    else {
+        println!("Command '{}' not found", cmd_key);
     }
     
 }
@@ -498,6 +515,7 @@ pub fn get_mode_commands<'a>(commands: &'a HashMap<&str, Command>, mode: &Mode) 
                     cmd == "reload" ||
                     cmd == "debug" ||
                     cmd == "undebug" ||
+                    //cmd == "hello" ||
                     cmd == "ifconfig"
                     
                 })

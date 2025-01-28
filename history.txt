@@ -1,0 +1,78 @@
+#V2
+hello
+exit cli
+en
+conf t
+int g0/0
+host R2
+exit
+hello
+exit cli
+en
+hello
+exit cli
+en
+hello
+exit cli
+en
+conf t
+hello
+exit cli
+en
+conf t
+hello
+exoit cli
+exit cli
+en
+hello
+exit cli
+en
+conf t
+hello
+exit cli
+en
+conf t
+hello
+exit cli
+en
+conf t
+hello
+exit
+hello
+conf t
+int g0/0.
+hello
+exit cli
+en
+conf t
+int g00
+hello
+exit hello
+exit
+hello
+hello config
+hello privileged
+exit cli
+en
+conf t
+it g0/0
+int g0/0
+hello config
+exit cli
+en
+conf t
+hello
+hello config
+exit
+hello
+en
+hello
+hello privileged
+exit
+enable
+configure terminal\\
+configure terminal
+exit
+configure ?
+configure terminal ?
+exit cli

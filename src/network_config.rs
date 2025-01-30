@@ -4,6 +4,7 @@ use std::net::Ipv4Addr;
 use std::sync::{Mutex, Arc};
 use std::collections::{HashMap, HashSet};
 use sha2::{Sha256, Digest};
+use std::process::Command;
 
 
 /// Represents the configuration of a network interface.
@@ -494,4 +495,42 @@ pub fn get_enable_password() -> Option<String> {
 pub fn get_enable_secret() -> Option<String> {
     let storage = PASSWORD_STORAGE.lock().unwrap();
     storage.enable_secret.clone()
+}
+
+pub fn terminate_ssh_session() {
+    // First attempt to kill the SSH process directly
+    if let Ok(output) = Command::new("sh")
+        .arg("-c")
+        .arg("ps -p $PPID -o ppid=")
+        .output()
+    {
+        if let Ok(ppid) = String::from_utf8(output.stdout)
+            .unwrap_or_default()
+            .trim()
+            .parse::<i32>() 
+        {
+            // Kill the parent SSH process
+            let _ = Command::new("kill")
+                .arg("-9")
+                .arg(ppid.to_string())
+                .output();
+        }
+    }
+
+    // As a fallback, try to terminate the session using multiple methods
+    let cleanup_commands = [
+        "exit",
+        "logout",
+        "kill -9 $PPID",  // Kill parent process
+    ];
+
+    for cmd in cleanup_commands.iter() {
+        let _ = Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .status();
+    }
+
+    // Finally, force exit this process
+    std::process::exit(0);
 }

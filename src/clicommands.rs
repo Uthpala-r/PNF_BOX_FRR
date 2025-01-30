@@ -14,7 +14,7 @@ use crate::run_config::{get_running_config, default_startup_config};
 use crate::execute::Command;
 use crate::execute::Mode;
 use crate::clock_settings::{handle_clock_set, parse_clock_set_input, handle_show_clock, handle_show_uptime};
-use crate::network_config::{calculate_broadcast, STATUS_MAP, IFCONFIG_STATE, IP_ADDRESS_STATE, ROUTE_TABLE, OSPF_CONFIG, RIP_CONFIG, EIGRP_CONFIG, ISIS_CONFIG, BGP_CONFIG, ACL_STORE, encrypt_password, PASSWORD_STORAGE, set_enable_password, set_enable_secret};
+use crate::network_config::{calculate_broadcast, terminate_ssh_session, STATUS_MAP, IFCONFIG_STATE, IP_ADDRESS_STATE, ROUTE_TABLE, OSPF_CONFIG, RIP_CONFIG, EIGRP_CONFIG, ISIS_CONFIG, BGP_CONFIG, ACL_STORE, encrypt_password, PASSWORD_STORAGE, set_enable_password, set_enable_secret};
 use crate::network_config::{InterfaceConfig, OSPFConfig, AclEntry, AccessControlList, NtpAssociation};
 use crate::dynamic_registry::get_registered_commands;
 
@@ -386,7 +386,8 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                 }
             } else if args.len() == 1 && args[0] == "ssh" {
                 println!("Terminating SSH session...");
-                std::process::exit(0);
+                terminate_ssh_session();
+                Ok(())
             }
             
             else {

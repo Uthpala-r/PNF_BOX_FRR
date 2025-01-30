@@ -310,8 +310,8 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
         suggestions: None,
         suggestions1: None,
         options: None,
-        execute: |_args, context, _| {
-            if _args.is_empty() {
+        execute: |args, context, _| {
+            if args.is_empty() {
                 match context.current_mode {
                     Mode::InterfaceMode => {
                         context.current_mode = Mode::ConfigMode;
@@ -384,8 +384,13 @@ pub fn build_command_registry() -> HashMap<&'static str, Command> {
                         Err("No mode to exit.".into())
                     }
                 }
-            } else {
-                Err("Invalid arguments provided to 'exit'. This command does not accept additional arguments.".into())
+            } else if args.len() == 1 && args[0] == "ssh" {
+                println!("Terminating SSH session...");
+                std::process::exit(0);
+            }
+            
+            else {
+                Err("Command is either 'exit' , 'exit cli' or 'exit ssh'".into())
             }
         },
     });
